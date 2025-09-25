@@ -18,14 +18,12 @@ if not API_TOKEN:
     exit(1)
 
 # ========================
-# НАСТРОЙКИ АДМИНИСТРАТОРА
+# НАСТРОЙКИ АДМИНИСТРАТОРА - ВАШИ ДАННЫЕ
 # ========================
 
-# ЗАМЕНИТЕ на ваш реальный Telegram ID (узнайте через /myid)
-ADMIN_IDS = [8341024077]  
-
-# Контакт для связи (username без @)
-ADMIN_CONTACT = "Paymentprosu"
+ADMIN_IDS = [8341024077]  # Ваш ID: 8341024077
+ADMIN_USERNAME = "Paymentprosu"  # Ваш username: Paymentprosu
+ADMIN_CONTACT = "the_boss_manger"  # Контакт для связи: the_boss_manger
 
 # Способы оплаты
 PAYMENT_METHODS = [
@@ -33,6 +31,11 @@ PAYMENT_METHODS = [
         "id": "sber",
         "name": "Сбербанк", 
         "details": "Номер карты: 1234 5678 9012 3456\nПолучатель: Иван Иванов"
+    },
+    {
+        "id": "tinkoff",
+        "name": "Тинькофф",
+        "details": "Номер карты: 5678 9012 3456 7890\nПолучатель: Петр Петров"
     }
 ]
 
@@ -50,8 +53,16 @@ class OrderStates(StatesGroup):
 # ========================
 # Функция проверки администратора
 # ========================
-def is_admin(user_id: int) -> bool:
-    return user_id in ADMIN_IDS
+def is_admin(user_id: int, username: str = None) -> bool:
+    # Проверка по ID
+    if user_id in ADMIN_IDS:
+        return True
+    
+    # Дополнительная проверка по username
+    if username and username.lower() == ADMIN_USERNAME.lower():
+        return True
+        
+    return False
 
 # ========================
 # Инициализация базы данных
@@ -93,7 +104,8 @@ def init_db():
         if cursor.fetchone()[0] == 0:
             products = [
                 ("Веб-разработка", "Создание сайта под ключ", 1000, "https://via.placeholder.com/300x200.png?text=Веб-разработка"),
-                ("Дизайн", "UI/UX дизайн интерфейса", 2000, "https://via.placeholder.com/300x200.png?text=Дизайн")
+                ("Дизайн", "UI/UX дизайн интерфейса", 2000, "https://via.placeholder.com/300x200.png?text=Дизайн"),
+                ("Консультация", "Техническая консультация 1 час", 3000, "https://via.placeholder.com/300x200.png?text=Консультация")
             ]
             cursor.executemany('INSERT INTO products (name, description, price, photo_url) VALUES (?, ?, ?, ?)', products)
         
@@ -112,7 +124,7 @@ async def get_my_id(message: types.Message):
     username = message.from_user.username
     first_name = message.from_user.first_name
     
-    admin_status = is_admin(user_id)
+    admin_status = is_admin(user_id, username)
     
     response = (
         f"👤 **Ваши данные:**\n"
@@ -120,11 +132,11 @@ async def get_my_id(message: types.Message):
         f"• **Username:** @{username if username else 'нет'}\n"
         f"• **Имя:** {first_name}\n"
         f"• **Статус админа:** {'✅ ДА' if admin_status else '❌ НЕТ'}\n\n"
-        f"**Контакт поддержки:** @{ADMIN_CONTACT}\n\n"
-        f"**Чтобы стать админом:**\n"
-        f"1. Скопируйте ваш ID: `{user_id}`\n"
-        f"2. Замените `123456789` в коде на этот ID\n"
-        f"3. Перезапустите бота"
+        f"**Контакт поддержки:** @{ADMIN_CONTACT}\n"
+        f"**Администратор:** @{ADMIN_USERNAME}\n\n"
+        f"**Текущие настройки админа:**\n"
+        f"• ID администратора: `{ADMIN_IDS[0]}`\n"
+        f"• Username администратора: @{ADMIN_USERNAME}"
     )
     
     await message.answer(response, parse_mode='Markdown')
@@ -135,6 +147,7 @@ async def get_my_id(message: types.Message):
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
     user_id = message.from_user.id
+    username = message.from_user.username
     
     keyboard = InlineKeyboardMarkup(row_width=2)
     buttons = [
@@ -143,9 +156,11 @@ async def send_welcome(message: types.Message):
     ]
     
     # Проверяем, является ли пользователь админом
-    if is_admin(user_id):
+    if is_admin(user_id, username):
         buttons.append(InlineKeyboardButton("👨‍💼 Админ", callback_data="menu_admin"))
-        logger.info(f"Пользователь {user_id} распознан как администратор")
+        logger.info(f"Пользователь {user_id} (@{username}) распознан как администратор")
+    else:
+        logger.info(f"Пользователь {user_id} (@{username}) - обычный пользователь")
     
     keyboard.add(*buttons)
     
@@ -194,12 +209,13 @@ async def handle_contacts(call: types.CallbackQuery):
     
     contact_text = (
         f"📞 **Контакты**\n\n"
-        f"Для связи с администратором:\n"
-        f"👤 @{the_boss_manger}\n\n"
-        f"📧 **По всем вопросам:**\n"
+        f"**Для связи с администратором:**\n"
+        f"👤 @{ADMIN_CONTACT}\n\n"
+        f"**По всем вопросам:**\n"
         f"• Покупки услуг\n• Техническая поддержка\n• Сотрудничество\n\n"
-        f"⏰ **Время ответа:** 1-2 часа\n"
-        f"🕒 **Рабочее время:** 10:00 - 22:00"
+        f"**Администратор:** @{ADMIN_USERNAME}\n"
+        f"**⏰ Время ответа:** 1-2 часа\n"
+        f"**🕒 Рабочее время:** 10:00 - 22:00"
     )
     
     try:
@@ -212,15 +228,16 @@ async def handle_contacts(call: types.CallbackQuery):
     except Exception as e:
         logger.error(f"Ошибка при отправке контактов: {e}")
         # Если не удалось отредактировать, отправляем новое сообщение
-        await call.message.answer(contact_text, parse_mode='Markdown')
+        await call.message.answer(contact_text, parse_mode='Markdown', reply_markup=keyboard)
 
 # ========================
 # ОБРАБОТЧИК АДМИН-ПАНЕЛИ
 # ========================
 async def handle_admin(call: types.CallbackQuery):
     user_id = call.from_user.id
+    username = call.from_user.username
     
-    if is_admin(user_id):
+    if is_admin(user_id, username):
         logger.info(f"Пользователь {user_id} зашел в админ-панель")
         
         keyboard = InlineKeyboardMarkup()
@@ -228,10 +245,13 @@ async def handle_admin(call: types.CallbackQuery):
         
         admin_text = (
             f"👨‍💼 **Панель администратора**\n\n"
-            f"📊 **Статистика:**\n"
-            f"• Ваш ID: `{8341024077}`\n"
-            f"• Контакт: @{Paymentprosu}\n\n"
-            f"⚙️ **Доступные функции:**\n"
+            f"**📊 Ваши данные:**\n"
+            f"• ID: `{user_id}`\n"
+            f"• Username: @{username if username else 'не установлен'}\n\n"
+            f"**👥 Контактная информация:**\n"
+            f"• Контакт для клиентов: @{ADMIN_CONTACT}\n"
+            f"• Ваш username: @{ADMIN_USERNAME}\n\n"
+            f"**⚙️ Доступные функции:**\n"
             f"• Просмотр заказов\n• Управление товарами\n• Статистика продаж"
         )
         
@@ -247,9 +267,18 @@ async def handle_admin(call: types.CallbackQuery):
 # ОБРАБОТЧИК МАГАЗИНА
 # ========================
 async def handle_shop(call: types.CallbackQuery):
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(InlineKeyboardButton("💰 Товар 1 - 1000₽", callback_data="product_1"))
-    keyboard.add(InlineKeyboardButton("💰 Товар 2 - 2000₽", callback_data="product_2"))
+    products = [
+        {"id": 1, "name": "Веб-разработка", "price": 1000},
+        {"id": 2, "name": "Дизайн", "price": 2000},
+        {"id": 3, "name": "Консультация", "price": 3000}
+    ]
+    
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    for product in products:
+        keyboard.add(InlineKeyboardButton(
+            f"💰 {product['name']} - {product['price']}₽", 
+            callback_data=f"product_{product['id']}"
+        ))
     keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
     
     await call.message.edit_text(
@@ -263,6 +292,7 @@ async def handle_shop(call: types.CallbackQuery):
 # ========================
 async def handle_main_menu(call: types.CallbackQuery):
     user_id = call.from_user.id
+    username = call.from_user.username
     
     keyboard = InlineKeyboardMarkup(row_width=2)
     buttons = [
@@ -270,7 +300,7 @@ async def handle_main_menu(call: types.CallbackQuery):
         InlineKeyboardButton("📞 Контакты", callback_data="menu_contacts")
     ]
     
-    if is_admin(user_id):
+    if is_admin(user_id, username):
         buttons.append(InlineKeyboardButton("👨‍💼 Админ", callback_data="menu_admin"))
     
     keyboard.add(*buttons)
@@ -286,10 +316,26 @@ async def handle_main_menu(call: types.CallbackQuery):
 async def handle_product(call: types.CallbackQuery):
     product_id = call.data.split("_")[1]
     
-    if product_id == "1":
-        await call.message.answer("🎁 **Товар 1**\nЦена: 1000₽\nОписание: Веб-разработка")
-    elif product_id == "2":
-        await call.message.answer("🎁 **Товар 2**\nЦена: 2000₽\nОписание: Дизайн")
+    products = {
+        "1": {"name": "Веб-разработка", "price": 1000, "desc": "Создание сайта под ключ"},
+        "2": {"name": "Дизайн", "price": 2000, "desc": "UI/UX дизайн интерфейса"},
+        "3": {"name": "Консультация", "price": 3000, "desc": "Техническая консультация 1 час"}
+    }
+    
+    product = products.get(product_id)
+    if product:
+        await call.message.answer(
+            f"🎁 **{product['name']}**\n\n"
+            f"💵 **Цена:** {product['price']}₽\n"
+            f"📝 **Описание:** {product['desc']}\n\n"
+            f"💳 **Для покупки:**\n"
+            f"1. Нажмите кнопку 'Назад'\n"
+            f"2. Выберите товар в магазине\n"
+            f"3. Нажмите 'Купить'",
+            parse_mode='Markdown'
+        )
+    else:
+        await call.message.answer("Товар не найден")
 
 # ========================
 # ОБРАБОТЧИК ТЕКСТОВЫХ СООБЩЕНИЙ
@@ -299,7 +345,7 @@ async def handle_messages(message: types.Message):
     if message.text.startswith('/'):
         await message.answer("Используйте /start для начала работы или /myid чтобы узнать ваш ID")
     else:
-        await message.answer(f"Для связи с администратором: @{the_boss_manger}")
+        await message.answer(f"Для связи с администратором: @{ADMIN_CONTACT}")
 
 # ========================
 # ЗАПУСК БОТА
@@ -307,7 +353,8 @@ async def handle_messages(message: types.Message):
 if __name__ == "__main__":
     logger.info("=" * 50)
     logger.info("ЗАПУСК БОТА")
-    logger.info(f"Контакт поддержки: @{the_boss_manger}")
+    logger.info(f"Администратор: @{ADMIN_USERNAME} (ID: {ADMIN_IDS[0]})")
+    logger.info(f"Контакт поддержки: @{ADMIN_CONTACT}")
     logger.info("=" * 50)
     
     init_db()
