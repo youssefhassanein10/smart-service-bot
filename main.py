@@ -122,7 +122,7 @@ async def show_shop(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda call: call.data == "contacts")  
 async def show_contacts(call: types.CallbackQuery):
     await call.answer()
-    await call.message.answer(f"📞 Контакты: {Paymentprosu}")
+    await call.message.answer(f"📞 Контакты: {the_boss_manger}")
 
 @dp.callback_query_handler(lambda call: call.data == "admin")
 async def show_admin(call: types.CallbackQuery):
