@@ -18,7 +18,7 @@ if not API_TOKEN:
     exit(1)
 
 # Настройки администратора
-ADMIN_USERNAME = "@paymentprosu"
+ADMIN_USERNAME = "paymentprosu"
 ADMIN_IDS = [8341024077]  # Замени на свой ID Telegram
 
 # Способы оплаты
