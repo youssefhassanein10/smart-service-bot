@@ -1,19 +1,14 @@
-FROM python:3.10-slim
-
-# Устанавливаем инструменты для сборки C-расширений
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc libssl-dev libffi-dev python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Копируем зависимости и ставим их
-COPY requirements.txt .
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install -r requirements.txt
+# Создаем виртуальное окружение
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Копируем весь проект
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
 COPY . .
 
-# Запускаем бота
-CMD ["python", "bot.py"]
+CMD ["python", "main.py"]
