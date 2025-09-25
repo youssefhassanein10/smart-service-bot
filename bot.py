@@ -1,12 +1,12 @@
 import os
 from aiogram import Bot, Dispatcher, executor, types
 
-# Берем токен из Railway переменной окружения
+# Берем токен из переменной окружения
 API_TOKEN = os.getenv("API_TOKEN")
 
 # Проверяем, есть ли токен
 if not API_TOKEN:
-    raise ValueError("Не найден API_TOKEN. Добавь его в Railway Variables.")
+    raise ValueError("❌ Не найден API_TOKEN. Добавь его в Render Variables.")
 
 # Создаем объекты бота и диспетчера
 bot = Bot(token=API_TOKEN)
@@ -22,5 +22,5 @@ async def start_command(message: types.Message):
 async def help_command(message: types.Message):
     await message.answer("Я пока тестовый бот. Используй /start, чтобы поздороваться 🙂")
 
-if name == "__main__":
+if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
