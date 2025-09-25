@@ -19,7 +19,7 @@ if not API_TOKEN:
 
 # Настройки администратора (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
 ADMIN_IDS = [8341024077]  # Ваш Telegram ID
-ADMIN_USERNAME = "@paymentprosu"  # Ваш username в Telegram
+ADMIN_USERNAME = "Paymentprosu"  # Ваш username в Telegram
 
 # Способы оплаты
 PAYMENT_METHODS = [
@@ -122,7 +122,7 @@ async def show_shop(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda call: call.data == "contacts")  
 async def show_contacts(call: types.CallbackQuery):
     await call.answer()
-    await call.message.answer(f"📞 Контакты: {paymentprosu}")
+    await call.message.answer(f"📞 Контакты: {Paymentprosu}")
 
 @dp.callback_query_handler(lambda call: call.data == "admin")
 async def show_admin(call: types.CallbackQuery):
