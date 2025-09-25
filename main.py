@@ -398,7 +398,7 @@ async def show_admin_panel(message: types.Message):
     
     await message.edit_text(
         f"👨‍💼 **Панель администратора**\n\n"
-        f"📞 Контакт для клиентов: {@paymentprosu}",
+        f"📞 Контакт для клиентов: {paymentprosu}",
         reply_markup=keyboard,
         parse_mode='Markdown'
     )
