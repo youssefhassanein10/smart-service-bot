@@ -413,7 +413,10 @@ async def unknown_message(message: types.Message):
 # ========================
 # Запуск бота
 # ========================
-if __name__ == "__main__":
-    init_db()
-    logger.info("Бот запускается...")
-    executor.start_polling(dp, skip_updates=True)
+if name == "__main__":
+    try:
+        init_db()
+        logger.info("Бот запускается...")
+        executor.start_polling(dp, skip_updates=True)
+    except Exception as e:
+        logger.error(f"Ошибка при запуске бота: {e}")
