@@ -31,7 +31,7 @@ async def send_test(message: types.Message):
 async def echo(message: types.Message):
     await message.answer(f"Вы сказали: {message.text}")
 
-if name == "__main__":
+if __name__ == "__main__":
     if API_TOKEN:
         logger.info("🚀 Запускаю бота...")
         executor.start_polling(dp, skip_updates=True)
